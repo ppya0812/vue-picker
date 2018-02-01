@@ -77,17 +77,14 @@
               _this.setValue();
           },
           
-          scrolloToPosition(item, allDatas, callback) {
+          scrolloToPosition(item, scrollIndex = 0, allDatas, callback) {
               const _this = this;
-
               const scroller = _this.scroller[item];
               if (!scroller) return;
-
               scroller.setDimensions(_this.$refs['Component_' + item][0].clientHeight, _this.$refs['Content_' + item][0].offsetHeight, allDatas.length);
-
               setTimeout(() => {
                   const indatas = _this.inDatas(allDatas, _this.values[item]);
-                  let selval = indatas ? _this.values[item] : allDatas[0].value;
+                  let selval = indatas ? _this.values[item] : allDatas[scrollIndex].value;
                   if (!_this.scrolling[item]) {
                       scroller.select(selval, false);
                   }
@@ -95,10 +92,9 @@
               }, 0);
           },
           setValue(val) {
-              if (val.country >= 0) {
+              if (val && !val.target) {
                   this.values = val
               }
-              this.currentValue = val || this.values;
               this.$emit('confirm', this.values);
               this.close();
           },

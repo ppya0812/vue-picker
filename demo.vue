@@ -4,7 +4,9 @@
     v-if="countryList.length"
     :columns="columnsData"
     :items="pickerData"
+    :readonly="disabled"
     v-model="intData"
+    @input="inputChange"
     @change="selectChange"></picker>
 </template>
 
@@ -17,6 +19,7 @@
       picker
     },
     data () {
+      // intData的country === 存在于pickerData的country数组的value
       return {
         pickerData: {
           country:[],
@@ -24,41 +27,52 @@
           city: []
         },
         intData: {
-          country: '',
+          country: '', // country_中国
           province: '',
           city: ''
         }
+      }
+    },
+    props: {
+      disabled: Boolean
+    },
+    watch: {
+      intData (v) {
+        this.$root.placeSelected = v
       }
     },
     computed: {
       columnsData () {
         return this.$root.columnsData
       },
-      placeData () {
-        return this.$root.placeData
-      },
       countryList () {
         return this.$root.countryList
+      },
+      placeSelected () {
+        return this.$root.placeSelected
+      },
+      sku () {
+        return this.$root.sku
       }
     },
     methods: {
+      inputChange (v) {
+        this.intData = Object.assign(this.intData, v)
+      },
       selectChange(v) {
-        const name = this.placeData[v.value]
-        if (v.column == 'country' && name !== '中国')  {
-          this.$root.columnsData = ['country']
-          delete(this.pickerData.province)
-          delete(this.pickerData.city)
-          return
-        }
-        if(name && v.column == 'country') {
+        const name = v.value && v.value.split('_')[1]
+        if(v.column == 'country') {
           this.$root.getPlace(1, name).then(data => {
             this.pickerData.province = data || []
-            this.$refs.picker.updateColumn('province')
+            this.$refs.picker.updateColumn('province', `province_${this.placeSelected.province}`)
+            if (!data.length) {
+              this.pickerData.city = []
+            }
           })
-        } else if(name && v.column == 'province') {
+        } else if(v.column == 'province') {
           this.$root.getPlace(2, name).then(data => {
             this.pickerData.city = data || []
-            this.$refs.picker.updateColumn('city')
+            this.$refs.picker.updateColumn('city', `city_${this.placeSelected.city}`)
           })
         }
       }
@@ -66,20 +80,24 @@
     mounted () {
       this.$root.$on('place.update', (data) => {
         this.pickerData.country = data
-        this.intData.country = data[0].value
-        this.intData.province = 10002
-        this.intData.city = 0
-        this.$nextTick(() => {
-          this.$refs.picker.select.setValue({
-            country: data[0].value,
-            province: 10006,
-            city: 20
+        this.intData.country = this.sku.production_addr1 ? `country_${this.sku.production_addr1}` : ''
+
+        if (this.sku.production_addr1) {
+          this.$nextTick(() => {
+            this.$refs.picker.select.setValue({
+              country: this.intData.country,
+              province: `province_${this.sku.production_addr2}`,
+              city: `city_${this.sku.production_addr3}`
+            })
           })
-          // this.$refs.picker.updateColumn('country')
-        })
-        
+        }
       })
     }
   }
 
 </script>
+
+<style lang="less" scoped>
+@import '../common.less';
+
+</style>

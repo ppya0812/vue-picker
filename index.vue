@@ -1,18 +1,18 @@
 <template>
-    <div @click.stop="open" class="picker-input">{{displayValue}}</div>
+    <div @click.stop="open" class="picker-select-input">{{displayValue}}</div>
 </template>
 
 <script type="text/babel">
     import Vue from 'vue';
-    import SelectComponent from '../src/select.vue';
-    import { pageScroll } from '../src/util.js';
+    import SelectComponent from './select.vue';
+    import { pageScroll } from './util.js';
 
     export default {
-        name: 'picker',
+        name: 'w-select',
         data() {
             return {
                 select: null,
-                currentValue: this.value,
+                diffValue: this.value,
                 tmpNum: 0,
                 displayValue: ''
             }
@@ -52,17 +52,24 @@
             removeElement() {
                 if (this.select && this.select.$el) document.body.removeChild(this.select.$el);
             },
-            setDisplayText(val) {
+            setDisplayText() {
                 // 处理选中后展示的文案
                 let result = [];
-                for(let key in val) {
+                let valueR = {}
+                this.columns.length && this.columns.forEach((key,i) => {
                     let arr = this.items[key];
                     arr && arr.forEach(item => {
-                        if(item.value == val[key]){
+                        if(item.value == this.diffValue[key]){
                             result.push(item.name);
+                            valueR[key] = item.value;
                         }
                     })
-                }
+                    if (!this.diffValue[key] && arr[0]) {
+                        result.push(arr[0].name);
+                        valueR[key] = arr[0].value;
+                    }
+                    this.$emit('input', valueR);
+                })
                 this.displayValue = result.join(' ')
             },
             render() {
@@ -81,9 +88,9 @@
                 // confirm监听, emit input
                 this.select.$on('confirm', (value) => {
                     if (this.tmpNum > 0 || this.initEmit) {
-                        this.setDisplayText(value);
-                        this.currentValue = value;
-                        this.$emit('input', value);
+                        this.diffValue = value
+                        this.setDisplayText();
+                        // this.$emit('input', value);
                     }
                     this.tmpNum++;
                 });
@@ -92,28 +99,32 @@
                     this.$emit('change', value);
                 });
             },
-            updateColumn(column) {
+            updateColumn(column, scrollValue) {
                 // 更新列表， emit  change
                 let allData = this.items[column];
+                let scrollIndex = 0
                 if(allData && allData.length > 0){
-                    this.$nextTick(()=>{
-                        this.select.scrolloToPosition(column, allData, (value)=>{
+                    allData.forEach((item, i) => {
+                        if (item.value === scrollValue) {
+                            scrollIndex = i
+                        }
+                    })
+                    this.$nextTick(() => {
+                        this.select.scrolloToPosition(column, scrollIndex, allData, (value)=>{
                             this.$emit('change', {
                                 column,
                                 value
                             });
-                            this.value[column] = value
-                            this.setDisplayText(this.value);
-                            // this.currentValue = value;
-                            // this.$emit('input', value);
+                            this.diffValue[column] = value
+                            Object.values(this.value)[0] && this.setDisplayText()
                         })
                     })
                 }
             }
         },
         mounted() {
-            this.render();
-            this.setDisplayText(this.value);
+            this.render(); 
+            Object.values(this.value)[0] && this.setDisplayText();
         },
         beforeDestroy() {
             pageScroll.unlock();
@@ -121,3 +132,7 @@
         }
     }
 </script>
+
+<style lang="less">
+    @import './select.less';
+</style>
