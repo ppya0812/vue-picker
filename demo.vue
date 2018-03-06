@@ -60,8 +60,9 @@
         this.intData = Object.assign(this.intData, v)
       },
       selectChange(v) {
-        const name = v.value && v.value.split('_')[1]
+        let name = v.value && v.value.split('_')[1]
         if(v.column == 'country') {
+          name = name || this.pickerData.country[0].name
           this.$root.getPlace(1, name).then(data => {
             this.pickerData.province = data || []
             this.$refs.picker.updateColumn('province', `province_${this.placeSelected.province}`)
@@ -69,10 +70,10 @@
               this.pickerData.city = []
             }
           })
-        } else if(v.column == 'province') {
+        } else if(v.column == 'province' && name) {
           this.$root.getPlace(2, name).then(data => {
             this.pickerData.city = data || []
-            this.$refs.picker.updateColumn('city', `city_${this.placeSelected.city}`)
+            name && this.$refs.picker.updateColumn('city', `city_${this.placeSelected.city}`)
           })
         }
       }
@@ -80,9 +81,9 @@
     mounted () {
       this.$root.$on('place.update', (data) => {
         this.pickerData.country = data
-        this.intData.country = this.sku.production_addr1 ? `country_${this.sku.production_addr1}` : ''
+        this.intData.country = this.sku && this.sku.production_addr1 ? `country_${this.sku.production_addr1}` : ''
 
-        if (this.sku.production_addr1) {
+        if (this.sku && this.sku.production_addr1) {
           this.$nextTick(() => {
             this.$refs.picker.select.setValue({
               country: this.intData.country,
@@ -96,8 +97,3 @@
   }
 
 </script>
-
-<style lang="less" scoped>
-@import '../common.less';
-
-</style>

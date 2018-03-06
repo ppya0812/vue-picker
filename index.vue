@@ -1,5 +1,11 @@
 <template>
-    <div @click.stop="open" class="picker-select-input">{{displayValue}}</div>
+    <div @click.stop="open" :class="['picker-select-input', {'disabled': readonly}]">
+        {{displayValue}}
+        <div class="picker-select-space" v-if="!displayValue && !readonly">
+            <span>请选择</span><!--
+         --><img class="picker-anchor-icon" src="../../assets/arrow-go-right.svg" alt="">
+        </div>
+    </div>
 </template>
 
 <script type="text/babel">
